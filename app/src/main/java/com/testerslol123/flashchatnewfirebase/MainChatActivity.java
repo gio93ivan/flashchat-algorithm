@@ -27,11 +27,15 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.spongycastle.*;
+
+import edu.rit.util.Hex;
 
 public class MainChatActivity extends AppCompatActivity {
 
@@ -100,12 +104,96 @@ public class MainChatActivity extends AppCompatActivity {
             for (int i = 0; i < digest.length; i++) {
                 sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
             }
-            Log.d("Kripto", "Hasil Hash SHA-512 = " + sb);
+//            Log.d("Kripto", "Hasil Hash SHA-512 = " + sb);
 
             if(!input.equals("")) {
                 InstantMessage chat = new InstantMessage(input, mDisplayName);
 //                InstantMessage chat = new InstantMessage(sb.toString(), mDisplayName);
-                mDatabaseReference.child("messages").push().setValue(chat);
+//                mDatabaseReference.child("messages").push().setValue(chat);
+
+                byte[] textMessage = input.getBytes();
+                SerpentOptimized serpent = new SerpentOptimized();
+
+
+                byte[] byteArr = input.getBytes();
+                // print the byte[] elements
+//                Log.d("Kripto", "String to byte array: " + Arrays.toString(byteArr));
+//                Log.d("Kripto", "Byte length of input = " + byteArr.length);
+
+                /*
+                byte[] dst = new byte[16];
+                String foo = "mister";
+                byte[] src = foo.getBytes();
+                dst[0] = (byte)src.length;
+                System.arraycopy(src, 0, dst, 1, src.length);
+
+                Log.d("Kripto", "Length of byte for src = " + src.length);
+                Log.d("Kripto", "Byte testing for foo text = " + Hex.toString(dst));
+                */
+
+                String string = "selamat siang";
+                byte[] result = new byte[16];
+
+                byte[] panjangString = string.getBytes();
+                System.arraycopy(panjangString, 0, result, 16 - string.length(), string.length());
+                Log.d("Kripto", "panjang byte dari yang dilakukan result= " + result.length);
+                Log.d("Kripto", "panjang byte dari yang dilakukan panjangString= " + panjangString.length);
+
+                Log.d("Kripto", "content result ketika di konvert ke dalam bentuk hex = " + Hex.toString(result));
+
+                byte[] test_in = new byte[] {
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                };
+
+//                Log.d("Kripto", "panjang byte dari hasil input = " + textMessage.length);
+
+//                InstantMessage initValue = new InstantMessage(Hex.toString(textMessage), mDisplayName);
+//                mDatabaseReference.child("messages").push().setValue(initValue);
+
+                byte[] test_key = new byte[] {
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+                };
+
+                serpent.setKey(test_key);
+                serpent.encrypt(result);
+
+
+                Log.d("Kripto", "hex result dari encrypt serpent = " + Hex.toString(result));
+                Log.d("Kripto", "string result dari encrypt serpent (berharap cipher text ya) = " + new String(result));
+
+
+
+                serpent.decrypt(result);
+                Log.d("Kripto", "hex result dari decrypt serpent = " + Hex.toString(result));
+                Log.d("Kripto", "string result dari decrypt serpent (harusnya balik jdi text) = " + new String(result));
+
+
+
+
+//                InstantMessage chatValue = new InstantMessage(Hex.toString(textMessage), mDisplayName);
+//                mDatabaseReference.child("messages").push().setValue(chatValue);
+
+
+//                serpent.decrypt(textMessage);
+//                InstantMessage chatValueDecrypt = new InstantMessage(Hex.toString(textMessage), mDisplayName);
+//                mDatabaseReference.child("messages").push().setValue(chatValueDecrypt);
+
+//                InstantMessage pesanAsli = new InstantMessage(input, mDisplayName);
+//                mDatabaseReference.child("messages").push().setValue(input);
+
+
+
+//                InstantMessage sha512Teks = new InstantMessage(sb.toString(), mDisplayName);
+//                mDatabaseReference.child("messages").push().setValue(sha512Teks);
+
+
+
+
+
 
                 // Get current User
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -113,33 +201,8 @@ public class MainChatActivity extends AppCompatActivity {
 
                 Log.d("FireStore", "email user = " + email);
 
-                // Access a Cloud Firestore instance from your Activity
-                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                mInputText.setText("");
 
-                Date currentTime = Calendar.getInstance().getTime();
-
-                // Save message to fire store
-                Map<String, Object> messageFirestore = new HashMap<>();
-                messageFirestore.put("message", input);
-                messageFirestore.put("email", email);
-                messageFirestore.put("chat_time", currentTime);
-
-                db.collection("Messages")
-                    .add(messageFirestore)
-                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                        @Override
-                        public void onSuccess(DocumentReference documentReference) {
-                            Log.d("FireStore", "Save Message with snapshot ID: " + documentReference.getId());
-
-                            mInputText.setText("");
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.w("FireStore", "Error adding save message", e);
-                        }
-                    });
             }
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
