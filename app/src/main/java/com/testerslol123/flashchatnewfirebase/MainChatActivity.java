@@ -25,6 +25,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -98,13 +99,18 @@ public class MainChatActivity extends AppCompatActivity {
 
         MessageDigest md = null;
         try {
+            String masukkan_encrypt_key = new String("halo dunia");
             md = MessageDigest.getInstance("SHA-512");
-            byte[] digest = md.digest(input.getBytes());
+            byte[] digest = md.digest(masukkan_encrypt_key.getBytes());
+
+            digest = Arrays.copyOfRange(digest, 0, 32);
+
+
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < digest.length; i++) {
                 sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
             }
-//            Log.d("Kripto", "Hasil Hash SHA-512 = " + sb);
+            Log.d("Kripto", "Hasil Hash SHA-512 = " + sb);
 
             if(!input.equals("")) {
                 InstantMessage chat = new InstantMessage(input, mDisplayName);
@@ -131,6 +137,7 @@ public class MainChatActivity extends AppCompatActivity {
                 Log.d("Kripto", "Byte testing for foo text = " + Hex.toString(dst));
                 */
 
+                /*
                 String string = "selamat siang";
                 byte[] result = new byte[16];
 
@@ -142,9 +149,11 @@ public class MainChatActivity extends AppCompatActivity {
                 Log.d("Kripto", "content result ketika di konvert ke dalam bentuk hex = " + Hex.toString(result));
 
                 byte[] test_in = new byte[] {
-                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+                    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                 };
+                */
+
 
 //                Log.d("Kripto", "panjang byte dari hasil input = " + textMessage.length);
 
@@ -158,18 +167,45 @@ public class MainChatActivity extends AppCompatActivity {
                         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
                 };
 
-                serpent.setKey(test_key);
-                serpent.encrypt(result);
+                byte[] buatEnkripsi = new byte[16];
+
+                System.arraycopy(byteArr, 0, buatEnkripsi, 16 - input.length(), input.length());
 
 
-                Log.d("Kripto", "hex result dari encrypt serpent = " + Hex.toString(result));
-                Log.d("Kripto", "string result dari encrypt serpent (berharap cipher text ya) = " + new String(result));
+                Log.d("Kripto", "Length of digest key = " + digest.length);
+
+
+                byte[] encrypt_key = new byte[32];
+//                System.arraycopy(digest, 0, encrypt_key,);
+
+
+                serpent.setKey(digest);
+
+//                serpent.setKey(test_key);
+                Log.d("Kripto", "panjang dari hasil result SEBELUM ENCRYPT dalam bentuk byte = " + buatEnkripsi.length);
+                serpent.encrypt(buatEnkripsi);
+
+                Log.d("Kripto", "panjang dari hasil result SETELAH ENCRYPT dalam bentuk byte = " + buatEnkripsi.length);
+
+
+                String hex_to_string_content = Hex.toString(buatEnkripsi);
+                Log.d("Kripto", "hex result dari encrypt serpent = " + hex_to_string_content);
+
+                String hasil_enkripsi = new String(buatEnkripsi);
+                Log.d("Kripto", "string result dari encrypt serpent (berharap cipher text ya) = " + hasil_enkripsi);
+
+                byte[] test_convert_balik = hasil_enkripsi.getBytes();
+                String convert_ngaco = Hex.toString(test_convert_balik);
+                Log.d("Kripto", "test integritas dari encrypt key memakai hasil string ngaco = " + convert_ngaco);
 
 
 
-                serpent.decrypt(result);
-                Log.d("Kripto", "hex result dari decrypt serpent = " + Hex.toString(result));
-                Log.d("Kripto", "string result dari decrypt serpent (harusnya balik jdi text) = " + new String(result));
+                serpent.decrypt(buatEnkripsi);
+                Log.d("Kripto", "hex result dari decrypt serpent = " + Hex.toString(buatEnkripsi));
+
+
+                String pesanAslikah = new String(buatEnkripsi);
+                Log.d("Kripto", "string result dari decrypt serpent (harusnya balik jdi text) = " + pesanAslikah);
 
 
 
